@@ -1,4 +1,5 @@
 import * as electron from 'electron';
+import { statSync } from 'fs';
 import mkdirp from 'mkdirp';
 import { join } from 'path';
 
@@ -26,6 +27,25 @@ export const getPortableExecutableDir = () => process.env.PORTABLE_EXECUTABLE_DI
 export function getDataDirectory() {
   const { app } = electron.remote || electron;
   return process.env.INSOMNIA_DATA_PATH || app.getPath('userData');
+}
+
+export function getAppPathUniversal() {
+  const { app } = electron.remote || electron;
+
+  const appPath = app.getAppPath();
+
+  if (process.platform !== 'darwin' || !appPath.endsWith('/app.asar')) {
+    return appPath;
+  }
+
+  const archAppPath = appPath.replace(/\/app\.asar$/, `app-${process.arch}.asar`);
+
+  try {
+    statSync(archAppPath);
+    return archAppPath;
+  } catch (e) {
+    return appPath;
+  }
 }
 
 export function getViewportSize(): string | null {
